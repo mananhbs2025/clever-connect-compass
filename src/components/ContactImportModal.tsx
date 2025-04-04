@@ -96,27 +96,45 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({
     try {
       setIsConnecting(true);
       
-      // Call the SQL function to import connections
-      const { data, error } = await supabase.rpc(
-        'import_user_connections_to_contacts',
-        { user_id_param: user.id }
-      );
+      // Fetch connections directly from User_Connections table
+      const { data: connections, error: fetchError } = await supabase
+        .from('User_Connections')
+        .select('*');
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
-      // Check how many contacts were imported
-      if (data && data > 0) {
-        toast.success(`Successfully imported ${data} connections`);
-        
-        // Refresh contacts list
-        if (onImportSuccess) {
-          onImportSuccess();
-        }
-        
-        onClose();
-      } else {
-        toast.info("No new connections to import");
+      if (!connections || connections.length === 0) {
+        toast.info("No connections found to import");
+        setIsConnecting(false);
+        return;
       }
+
+      // Format connections for insertion
+      const contactsToInsert = connections.map(connection => ({
+        name: `${connection['First Name']} ${connection['Last Name']}`,
+        email: connection['Email Address'],
+        status: 'Imported',
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_contact: connection['Connected On'] || null,
+      }));
+
+      // Insert connections as contacts
+      const { error: insertError } = await supabase
+        .from('contacts')
+        .insert(contactsToInsert);
+
+      if (insertError) throw insertError;
+
+      toast.success(`Successfully imported ${connections.length} connections`);
+      
+      // Refresh contacts list
+      if (onImportSuccess) {
+        onImportSuccess();
+      }
+      
+      onClose();
     } catch (error) {
       console.error('Connection import error:', error);
       toast.error("Failed to import connections");

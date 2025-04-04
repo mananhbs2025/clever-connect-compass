@@ -51,13 +51,6 @@ const ContactsPage = () => {
     }
   }, [contacts]);
 
-  // Auto-show import modal if no contacts
-  useEffect(() => {
-    if (contacts && contacts.length === 0) {
-      setShowImportModal(true);
-    }
-  }, [contacts]);
-
   // Handle errors
   useEffect(() => {
     if (error) {

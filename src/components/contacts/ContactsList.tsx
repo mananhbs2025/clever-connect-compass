@@ -27,6 +27,10 @@ export const ContactsList: React.FC<ContactsListProps> = ({ contacts }) => {
     
     const date = new Date(dateString);
     const now = new Date();
+    
+    // Check if the date is valid before formatting
+    if (isNaN(date.getTime())) return "Never";
+    
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
     
     if (diffInDays === 0) return "Today";
@@ -79,7 +83,7 @@ export const ContactsList: React.FC<ContactsListProps> = ({ contacts }) => {
                   variant={
                     contact.status === "Active"
                       ? "default"
-                      : contact.status === "New Lead"
+                      : contact.status === "Imported"
                       ? "secondary"
                       : "outline"
                   }
