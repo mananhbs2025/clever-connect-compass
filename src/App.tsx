@@ -11,6 +11,8 @@ import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
+import ConnectionsPage from "./pages/ConnectionsPage";
+import ContactsPage from "./pages/ContactsPage";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,14 @@ const App = () => (
             <Route 
               path="/dashboard" 
               element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
+            />
+            <Route 
+              path="/connections" 
+              element={<ProtectedRoute><ConnectionsPage /></ProtectedRoute>} 
+            />
+            <Route 
+              path="/contacts" 
+              element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} 
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

@@ -1,7 +1,12 @@
 
 export interface ContactData {
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
+  company?: string;
+  position?: string;
+  connectedOn?: string;
+  profileUrl?: string;
   [key: string]: string | undefined;
 }
 
@@ -18,10 +23,33 @@ export const parseCSV = (file: File): Promise<ContactData[]> => {
         .filter(line => line.trim() !== '')
         .map(line => {
           const values = line.split(',').map(value => value.trim());
-          return headers.reduce((obj, header, index) => {
-            obj[header] = values[index];
-            return obj;
-          }, {} as ContactData);
+          const contact: ContactData = {};
+          
+          // Map CSV headers to our contact fields
+          headers.forEach((header, index) => {
+            const value = values[index] || '';
+            
+            if (header.includes('first') && header.includes('name')) {
+              contact.firstName = value;
+            } else if (header.includes('last') && header.includes('name')) {
+              contact.lastName = value;
+            } else if (header.includes('email')) {
+              contact.email = value;
+            } else if (header.includes('company')) {
+              contact.company = value;
+            } else if (header.includes('position') || header.includes('title')) {
+              contact.position = value;
+            } else if (header.includes('connect') && header.includes('on')) {
+              contact.connectedOn = value;
+            } else if (header.includes('url') || header.includes('profile')) {
+              contact.profileUrl = value;
+            } else {
+              // Store any other fields with their original header names
+              contact[header] = value;
+            }
+          });
+          
+          return contact;
         });
       
       resolve(contacts);
