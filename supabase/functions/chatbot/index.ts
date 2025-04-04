@@ -8,6 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Get OpenAI API key from environment variable
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 interface Connection {
@@ -34,6 +35,7 @@ serve(async (req) => {
     const { query, accessToken } = await req.json();
     
     if (!openAIApiKey) {
+      console.error("Error: OpenAI API key not found");
       return new Response(
         JSON.stringify({ error: "OpenAI API key not found" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -67,6 +69,8 @@ serve(async (req) => {
     // Prepare connection data for the AI model
     const connectionSummary = prepareConnectionData(connections as Connection[]);
     
+    console.log("Calling OpenAI API with API key:", openAIApiKey ? "API key exists" : "No API key found");
+    
     // Call OpenAI API with the user's query and connection data
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -95,8 +99,10 @@ serve(async (req) => {
     });
     
     const data = await response.json();
+    console.log("OpenAI API response:", JSON.stringify(data));
     
     if (!data.choices || data.choices.length === 0) {
+      console.error("Invalid response from OpenAI:", data);
       return new Response(
         JSON.stringify({ error: "Invalid response from OpenAI" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

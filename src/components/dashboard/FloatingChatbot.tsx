@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ interface FloatingChatbotProps {
 }
 
 type MessageType = {
-  id: number;
+  id: string;
   text: string;
   sender: "user" | "bot";
   isLoading?: boolean;
@@ -21,7 +22,7 @@ type MessageType = {
 export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, onClose }) => {
   const [messages, setMessages] = useState<MessageType[]>([
     {
-      id: 1,
+      id: "welcome-message",
       text: "👋 Hello! I'm your Nubble Assistant. Ask me anything about your network!",
       sender: "bot",
     },
@@ -41,7 +42,7 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
 
   const addMessage = (text: string, sender: "user" | "bot", isLoading: boolean = false) => {
     const newMessage = {
-      id: Date.now(),
+      id: `message-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       text,
       sender,
       isLoading,
@@ -51,7 +52,7 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
     return newMessage.id;
   };
 
-  const updateMessage = (id: number, text: string, isLoading: boolean = false) => {
+  const updateMessage = (id: string, text: string, isLoading: boolean = false) => {
     setMessages(prevMessages => 
       prevMessages.map(message => 
         message.id === id 
@@ -97,7 +98,7 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
         updateMessage(loadingMessageId, "Sorry, I couldn't process your request. Please try again later.", false);
         toast.error("Failed to get a response from the assistant");
       } else if (data.error) {
-        console.error("OpenAI API error:", data.error);
+        console.error("ChatGPT API error:", data.error);
         updateMessage(loadingMessageId, "Sorry, I encountered an issue understanding your request. Please try again.", false);
       } else {
         // Update the loading message with the actual response
