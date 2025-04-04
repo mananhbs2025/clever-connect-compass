@@ -40,7 +40,7 @@ const ContactsPage = () => {
         .from("User_Connections")
         .update({ user_id: user.id })
         .is("user_id", null)
-        .select("*", { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
       
       if (error) {
         console.error("Error assigning connections:", error);
@@ -74,7 +74,7 @@ const ContactsPage = () => {
       // This query should return all data from User_Connections for the current user
       const { data, error, count } = await supabase
         .from("User_Connections")
-        .select("*", { count: 'exact' })
+        .select('*', { count: 'exact' })
         .eq("user_id", user?.id);
 
       if (error) {
