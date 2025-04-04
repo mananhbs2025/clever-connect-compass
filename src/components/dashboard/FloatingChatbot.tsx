@@ -4,14 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Send, UserCircle, Bot, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface FloatingChatbotProps {
   connections: any[];
   onClose: () => void;
 }
 
+type MessageType = {
+  id: number;
+  text: string;
+  sender: "user" | "bot";
+  isLoading?: boolean;
+};
+
 export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, onClose }) => {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<MessageType[]>([
     {
       id: 1,
       text: "👋 Hello! I'm your Nubble Assistant. Ask me anything about your network!",
@@ -20,6 +29,7 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
   ]);
   
   const [inputValue, setInputValue] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -30,34 +40,100 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
-    
-    // Add user message
-    const userMessage = {
+  const addMessage = (text: string, sender: "user" | "bot", isLoading: boolean = false) => {
+    const newMessage = {
       id: Date.now(),
-      text: inputValue,
-      sender: "user" as const,
+      text,
+      sender,
+      isLoading,
     };
     
-    setMessages([...messages, userMessage]);
-    setInputValue("");
+    setMessages(prevMessages => [...prevMessages, newMessage]);
+    return newMessage.id;
+  };
+
+  const updateMessage = (id: number, text: string, isLoading: boolean = false) => {
+    setMessages(prevMessages => 
+      prevMessages.map(message => 
+        message.id === id 
+          ? { ...message, text, isLoading } 
+          : message
+      )
+    );
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isProcessing) return;
     
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse = generateBotResponse(inputValue, connections);
-      setMessages(prevMessages => [...prevMessages, {
-        id: Date.now(),
-        text: botResponse,
-        sender: "bot" as const,
-      }]);
-    }, 1000);
+    // Add user message
+    addMessage(inputValue, "user");
+    
+    // Clear input and set processing state
+    setInputValue("");
+    setIsProcessing(true);
+    
+    // Add a loading message from the bot
+    const loadingMessageId = addMessage("Thinking...", "bot", true);
+    
+    try {
+      // Get the current user's session
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData?.session) {
+        updateMessage(loadingMessageId, "Sorry, you need to be logged in to use the chatbot.", false);
+        setIsProcessing(false);
+        return;
+      }
+      
+      // Call our Edge Function with the user's query
+      const { data, error } = await supabase.functions.invoke('chatbot', {
+        body: {
+          query: inputValue,
+          accessToken: sessionData.session.access_token,
+        },
+      });
+      
+      if (error) {
+        console.error("Edge function error:", error);
+        updateMessage(loadingMessageId, "Sorry, I couldn't process your request. Please try again later.", false);
+        toast.error("Failed to get a response from the assistant");
+      } else if (data.error) {
+        console.error("OpenAI API error:", data.error);
+        updateMessage(loadingMessageId, "Sorry, I encountered an issue understanding your request. Please try again.", false);
+      } else {
+        // Update the loading message with the actual response
+        updateMessage(loadingMessageId, data.response, false);
+      }
+    } catch (error) {
+      console.error("Error processing message:", error);
+      updateMessage(loadingMessageId, "Sorry, something went wrong. Please try again later.", false);
+      toast.error("An error occurred while processing your message");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSendMessage();
     }
+  };
+
+  // If we don't have the OpenAI API functionality yet, use the simple response generator
+  const handleFallbackSendMessage = () => {
+    if (!inputValue.trim() || isProcessing) return;
+    
+    // Add user message
+    addMessage(inputValue, "user");
+    setInputValue("");
+    setIsProcessing(true);
+    
+    // Simulate bot response with the local function
+    setTimeout(() => {
+      const botResponse = generateBotResponse(inputValue, connections);
+      addMessage(botResponse, "bot");
+      setIsProcessing(false);
+    }, 1000);
   };
 
   return (
@@ -100,7 +176,13 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
                     )}
                   </div>
                   <div className={message.sender === "user" ? "text-white" : "text-purple-800"}>
-                    {message.text}
+                    {message.isLoading ? (
+                      <span className="flex items-center">
+                        <span className="animate-pulse">{message.text}</span>
+                      </span>
+                    ) : (
+                      message.text
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -119,10 +201,11 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
           onKeyPress={handleKeyPress}
           placeholder="Ask a question..."
           className="text-sm border-purple-200 h-8"
+          disabled={isProcessing}
         />
         <Button 
           onClick={handleSendMessage} 
-          disabled={!inputValue.trim()}
+          disabled={!inputValue.trim() || isProcessing}
           className="bg-purple-600 hover:bg-purple-700 text-white h-8 w-8 p-0"
           size="sm"
         >
@@ -133,7 +216,7 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
   );
 };
 
-// Helper function to generate bot responses (reusing the same function from ChatbotSection)
+// Helper function to generate bot responses (fallback if OpenAI isn't set up)
 function generateBotResponse(userInput: string, connections: any[]): string {
   const input = userInput.toLowerCase();
   
