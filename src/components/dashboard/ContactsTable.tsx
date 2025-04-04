@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MailPlus, PhoneCall, Plus, User } from "lucide-react";
-import { format } from "date-fns";
+import { Link } from "react-router-dom";
 
 interface Contact {
   id: string;
@@ -55,9 +55,9 @@ export const ContactsTable: React.FC<ContactsTableProps> = ({
               <TableRow key={contact.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
+                    <Link to="/contacts" className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2 hover:bg-gray-300 transition-colors">
                       <User className="h-4 w-4 text-gray-500" />
-                    </div>
+                    </Link>
                     <div>
                       <div>{contact.name}</div>
                       <div className="text-xs text-muted-foreground">
