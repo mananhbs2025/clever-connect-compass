@@ -34,10 +34,13 @@ serve(async (req) => {
   try {
     const { query, accessToken } = await req.json();
     
+    console.log("Received request with query:", query);
+    console.log("Access Token provided:", !!accessToken);
+    
     if (!openAIApiKey) {
-      console.error("Error: OpenAI API key not found");
+      console.error("Error: OpenAI API key not found in environment");
       return new Response(
-        JSON.stringify({ error: "OpenAI API key not found" }),
+        JSON.stringify({ error: "OpenAI API key not configured" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -182,3 +185,4 @@ function prepareConnectionData(connections: Connection[]): string {
   
   return summary;
 }
+
