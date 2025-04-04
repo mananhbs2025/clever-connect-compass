@@ -7,25 +7,28 @@ import { LogOut, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { parseCSV, ContactData } from "@/utils/csv-parser";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [hasConnections, setHasConnections] = useState<boolean | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [connections, setConnections] = useState<any[]>([]);
 
-  // Check if user has connections
+  // Check if user has connections and fetch them
   useEffect(() => {
-    const checkConnections = async () => {
+    const checkAndFetchConnections = async () => {
       if (!user) return;
 
       try {
         const { data, error } = await supabase
           .from('User_Connections')
           .select('*')
-          .eq('user_id', user.id)
-          .limit(1);
+          .eq('user_id', user.id);
 
         if (error) throw error;
+        
+        setConnections(data || []);
         setHasConnections(data && data.length > 0);
       } catch (error) {
         console.error("Error checking connections:", error);
@@ -33,7 +36,7 @@ const Dashboard = () => {
       }
     };
 
-    checkConnections();
+    checkAndFetchConnections();
   }, [user]);
 
   const handleLogout = async () => {
@@ -76,6 +79,16 @@ const Dashboard = () => {
 
       console.log("Upload success:", data);
       toast.success(`Successfully imported ${connectionsToInsert.length} connections`);
+      
+      // Refresh connections after upload
+      const { data: newConnections, error: fetchError } = await supabase
+        .from('User_Connections')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (fetchError) throw fetchError;
+      
+      setConnections(newConnections || []);
       setHasConnections(true);
     } catch (error) {
       console.error("Error uploading connections:", error);
@@ -87,7 +100,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <Card className="max-w-3xl mx-auto">
+      <Card className="max-w-6xl mx-auto">
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-2xl">Welcome to your Dashboard</CardTitle>
@@ -142,18 +155,78 @@ const Dashboard = () => {
             )}
             
             {hasConnections === true && (
-              <div className="border-t pt-4 mt-4">
-                <h3 className="font-medium mb-2">Your Connections</h3>
-                <p className="text-sm text-muted-foreground">
-                  You have successfully imported your connections.
-                </p>
-                <Button 
-                  className="mt-4" 
-                  variant="secondary"
-                  onClick={() => window.location.href = "/connections"}
-                >
-                  View Connections
-                </Button>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Your Connections</h3>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => window.location.href = "/connections"}
+                    >
+                      View All Connections
+                    </Button>
+                    
+                    <label className="cursor-pointer">
+                      <Button variant="secondary">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Import More
+                      </Button>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept=".csv" 
+                        onChange={handleFileUpload}
+                        disabled={isUploading}
+                      />
+                    </label>
+                  </div>
+                </div>
+                
+                {connections.length > 0 ? (
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="max-h-96 overflow-y-auto">
+                      <Table>
+                        <TableHeader className="bg-muted/50 sticky top-0">
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Company</TableHead>
+                            <TableHead>Position</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {connections.slice(0, 5).map((connection, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-medium">
+                                {connection["First Name"]} {connection["Last Name"]}
+                              </TableCell>
+                              <TableCell>{connection["Email Address"]}</TableCell>
+                              <TableCell>{connection.Company}</TableCell>
+                              <TableCell>{connection.Position}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    {connections.length > 5 && (
+                      <div className="p-4 bg-gray-50 text-center border-t">
+                        <p className="text-sm text-muted-foreground">
+                          Showing 5 of {connections.length} connections
+                        </p>
+                        <Button 
+                          variant="link" 
+                          onClick={() => window.location.href = "/connections"}
+                          className="mt-1"
+                        >
+                          View all connections
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">Loading your connections...</p>
+                )}
               </div>
             )}
           </div>
