@@ -11,75 +11,58 @@ export type Database = {
     Tables: {
       activities: {
         Row: {
-          contact_id: string | null
           contact_name: string
-          created_at: string
+          created_at: string | null
           id: string
           scheduled_date: string
           type: string
-          updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
-          contact_id?: string | null
           contact_name: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           scheduled_date: string
           type: string
-          updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
-          contact_id?: string | null
           contact_name?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           scheduled_date?: string
           type?: string
-          updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "activities_contact_id_fkey"
-            columns: ["contact_id"]
-            isOneToOne: false
-            referencedRelation: "contacts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       contacts: {
         Row: {
-          created_at: string
+          created_at: string | null
           email: string | null
           id: string
           last_contact: string | null
           name: string
           status: string | null
-          updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           email?: string | null
           id?: string
           last_contact?: string | null
           name: string
           status?: string | null
-          updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           email?: string | null
           id?: string
           last_contact?: string | null
           name?: string
           status?: string | null
-          updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -110,12 +93,47 @@ export type Database = {
         }
         Relationships: []
       }
+      User_Connections: {
+        Row: {
+          Company: string
+          "Connected On": string
+          "Email Address": string
+          "First Name": string
+          "Last Name": string
+          Position: string
+          URL: string
+        }
+        Insert: {
+          Company: string
+          "Connected On": string
+          "Email Address": string
+          "First Name": string
+          "Last Name": string
+          Position: string
+          URL: string
+        }
+        Update: {
+          Company?: string
+          "Connected On"?: string
+          "Email Address"?: string
+          "First Name"?: string
+          "Last Name"?: string
+          Position?: string
+          URL?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      import_user_connections_to_contacts: {
+        Args: {
+          user_id_param: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

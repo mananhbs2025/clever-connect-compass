@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase, from } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -39,6 +39,7 @@ interface Contact {
 const ContactsPage = () => {
   const { user } = useAuth();
   const [showImportModal, setShowImportModal] = useState(false);
+  const [totalContacts, setTotalContacts] = useState<number>(0);
 
   // Fetch all contacts from Supabase with a properly defined queryKey
   const {
@@ -60,8 +61,22 @@ const ContactsPage = () => {
     },
   });
 
+  // Get total count of contacts
+  useEffect(() => {
+    if (contacts) {
+      setTotalContacts(contacts.length);
+    }
+  }, [contacts]);
+
+  // Auto-show import modal if no contacts
+  useEffect(() => {
+    if (contacts && contacts.length === 0) {
+      setShowImportModal(true);
+    }
+  }, [contacts]);
+
   // Handle errors
-  React.useEffect(() => {
+  useEffect(() => {
     if (error) {
       toast.error("Failed to load contacts");
       console.error(error);
@@ -112,7 +127,7 @@ const ContactsPage = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">All Contacts</h1>
               <p className="text-sm text-gray-500">
-                {contacts?.length || 0} contacts in your network
+                {totalContacts} contacts in your network
               </p>
             </div>
           </div>
