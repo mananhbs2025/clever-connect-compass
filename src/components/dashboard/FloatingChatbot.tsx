@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, UserCircle, Bot, X } from "lucide-react";
+import { Send, UserCircle, Bot, X, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -17,6 +17,7 @@ type MessageType = {
   text: string;
   sender: "user" | "bot";
   isLoading?: boolean;
+  isError?: boolean;
 };
 
 export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, onClose }) => {
@@ -40,23 +41,24 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
     scrollToBottom();
   }, [messages]);
 
-  const addMessage = (text: string, sender: "user" | "bot", isLoading: boolean = false) => {
+  const addMessage = (text: string, sender: "user" | "bot", isLoading: boolean = false, isError: boolean = false) => {
     const newMessage = {
       id: `message-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       text,
       sender,
       isLoading,
+      isError,
     };
     
     setMessages(prevMessages => [...prevMessages, newMessage]);
     return newMessage.id;
   };
 
-  const updateMessage = (id: string, text: string, isLoading: boolean = false) => {
+  const updateMessage = (id: string, text: string, isLoading: boolean = false, isError: boolean = false) => {
     setMessages(prevMessages => 
       prevMessages.map(message => 
         message.id === id 
-          ? { ...message, text, isLoading } 
+          ? { ...message, text, isLoading, isError } 
           : message
       )
     );
@@ -77,13 +79,23 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
     
     try {
       // Get the current user's session
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      if (!sessionData?.session) {
-        updateMessage(loadingMessageId, "Sorry, you need to be logged in to use the chatbot.", false);
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        updateMessage(loadingMessageId, "Sorry, there was an error with your session. Please try logging in again.", false, true);
+        toast.error("Authentication error");
         setIsProcessing(false);
         return;
       }
+      
+      if (!sessionData?.session) {
+        updateMessage(loadingMessageId, "Sorry, you need to be logged in to use the chatbot.", false, true);
+        setIsProcessing(false);
+        return;
+      }
+      
+      console.log("Calling chatbot edge function...");
       
       // Call our Edge Function with the user's query
       const { data, error } = await supabase.functions.invoke('chatbot', {
@@ -93,20 +105,47 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
         },
       });
       
+      console.log("Edge function response:", data ? "Success" : "No data", error ? "Error" : "No error");
+      
       if (error) {
         console.error("Edge function error:", error);
-        updateMessage(loadingMessageId, "Sorry, I couldn't process your request. Please try again later.", false);
+        updateMessage(
+          loadingMessageId, 
+          `Sorry, I couldn't process your request. Error: ${error.message || "Unknown error"}`, 
+          false, 
+          true
+        );
         toast.error("Failed to get a response from the assistant");
       } else if (data.error) {
         console.error("ChatGPT API error:", data.error);
-        updateMessage(loadingMessageId, "Sorry, I encountered an issue understanding your request. Please try again.", false);
+        updateMessage(
+          loadingMessageId, 
+          `Sorry, I encountered an issue: ${data.error}${data.details ? ` (${data.details})` : ""}`, 
+          false, 
+          true
+        );
+        toast.error("API error: " + data.error);
+      } else if (!data.response) {
+        console.error("No response in data:", data);
+        updateMessage(
+          loadingMessageId, 
+          "Sorry, I received an empty response. Please try again.", 
+          false, 
+          true
+        );
+        toast.error("Received empty response");
       } else {
         // Update the loading message with the actual response
         updateMessage(loadingMessageId, data.response, false);
       }
     } catch (error) {
       console.error("Error processing message:", error);
-      updateMessage(loadingMessageId, "Sorry, something went wrong. Please try again later.", false);
+      updateMessage(
+        loadingMessageId, 
+        `Sorry, something went wrong: ${error.message || "Unknown error"}`, 
+        false, 
+        true
+      );
       toast.error("An error occurred while processing your message");
     } finally {
       setIsProcessing(false);
@@ -164,18 +203,28 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
             <Card className={`max-w-[90%] ${
               message.sender === "user" 
                 ? "bg-purple-600 text-white border-purple-700" 
-                : "bg-white border-purple-200"
+                : message.isError 
+                  ? "bg-red-50 border-red-200" 
+                  : "bg-white border-purple-200"
             }`}>
               <CardContent className="p-2 text-sm">
                 <div className="flex gap-2">
                   <div className="shrink-0 mt-0.5">
                     {message.sender === "user" ? (
                       <UserCircle className="h-4 w-4 text-purple-200" />
+                    ) : message.isError ? (
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
                     ) : (
                       <Bot className="h-4 w-4 text-purple-600" />
                     )}
                   </div>
-                  <div className={message.sender === "user" ? "text-white" : "text-purple-800"}>
+                  <div className={
+                    message.sender === "user" 
+                      ? "text-white" 
+                      : message.isError 
+                        ? "text-red-700" 
+                        : "text-purple-800"
+                  }>
                     {message.isLoading ? (
                       <span className="flex items-center">
                         <span className="animate-pulse">{message.text}</span>

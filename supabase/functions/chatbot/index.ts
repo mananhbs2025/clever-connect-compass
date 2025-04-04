@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
@@ -69,56 +68,94 @@ serve(async (req) => {
       );
     }
     
+    console.log(`Successfully fetched ${connections?.length || 0} connections`);
+    
     // Prepare connection data for the AI model
     const connectionSummary = prepareConnectionData(connections as Connection[]);
     
-    console.log("Calling OpenAI API with API key:", openAIApiKey ? "API key exists" : "No API key found");
+    console.log("Calling OpenAI API with key length:", openAIApiKey ? openAIApiKey.length : 0);
+    
+    // Prepare the request body for OpenAI
+    const requestBody = {
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a helpful assistant named "Nubble Assistant" specialized in analyzing professional network data. 
+                    You provide personalized insights based on the user's connections.
+                    You are friendly, conversational, and always aim to be helpful.
+                    Use the connection data provided to answer user questions accurately.
+                    Keep responses concise (2-3 sentences when possible) and focused on the user's network. 
+                    If you cannot answer based on the provided connection data, politely say so.
+                    Here is the user's connection data: ${connectionSummary}`
+        },
+        { role: 'user', content: query }
+      ],
+      temperature: 0.7,
+      max_tokens: 300,
+    };
+    
+    console.log("OpenAI request configuration:", JSON.stringify({
+      model: requestBody.model,
+      temperature: requestBody.temperature,
+      max_tokens: requestBody.max_tokens
+    }));
     
     // Call OpenAI API with the user's query and connection data
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a helpful assistant named "Nubble Assistant" specialized in analyzing professional network data. 
-                      You provide personalized insights based on the user's connections.
-                      You are friendly, conversational, and always aim to be helpful.
-                      Use the connection data provided to answer user questions accurately.
-                      Keep responses concise (2-3 sentences when possible) and focused on the user's network. 
-                      If you cannot answer based on the provided connection data, politely say so.
-                      Here is the user's connection data: ${connectionSummary}`
-          },
-          { role: 'user', content: query }
-        ],
-        temperature: 0.7,
-        max_tokens: 300,
-      }),
-    });
-    
-    const data = await response.json();
-    console.log("OpenAI API response:", JSON.stringify(data));
-    
-    if (!data.choices || data.choices.length === 0) {
-      console.error("Invalid response from OpenAI:", data);
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`OpenAI API error (${response.status}):`, errorText);
+        return new Response(
+          JSON.stringify({ 
+            error: `OpenAI API returned an error: ${response.status}`,
+            details: errorText
+          }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const data = await response.json();
+      console.log("OpenAI API response status:", response.status);
+      console.log("OpenAI API response has choices:", !!data.choices);
+      
+      if (!data.choices || data.choices.length === 0) {
+        console.error("Invalid response from OpenAI:", JSON.stringify(data));
+        return new Response(
+          JSON.stringify({ 
+            error: "Invalid response from OpenAI",
+            details: data
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const aiResponse = data.choices[0].message.content;
+      console.log("Successfully generated AI response");
+      
       return new Response(
-        JSON.stringify({ error: "Invalid response from OpenAI" }),
+        JSON.stringify({ response: aiResponse }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (openAiError) {
+      console.error("Error calling OpenAI API:", openAiError);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to call OpenAI API",
+          details: openAiError.message
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    const aiResponse = data.choices[0].message.content;
-    
-    return new Response(
-      JSON.stringify({ response: aiResponse }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-    
   } catch (error) {
     console.error("Error in chatbot function:", error);
     return new Response(
@@ -185,4 +222,3 @@ function prepareConnectionData(connections: Connection[]): string {
   
   return summary;
 }
-
