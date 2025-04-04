@@ -7,12 +7,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,20 +25,12 @@ const LoginForm = () => {
       return;
     }
     
-    setIsLoading(true);
-    
-    // Simulating API call
     try {
-      // In the future, this will be replaced with actual authentication
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
-      toast.success("Logged in successfully!");
+      await login(email, password);
       navigate("/"); // Redirect to home page after login
     } catch (error) {
-      toast.error("Invalid email or password. Please try again.");
+      // Error is handled in the login function
       console.error("Login error:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 

@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SignUpForm = () => {
   const [name, setName] = useState("");
@@ -15,7 +16,7 @@ const SignUpForm = () => {
   const [password, setPassword] = useState("");
   const [isAgreed, setIsAgreed] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { signUp, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,25 +33,16 @@ const SignUpForm = () => {
       return;
     }
     
-    setIsLoading(true);
-    
-    // Simulating API call
     try {
-      // In the future, this will be replaced with actual authentication
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
-      toast.success("Account created successfully!");
-      console.log("Sign up data:", { name, email, password });
+      await signUp(name, email, password);
       
       // Redirect to login page after successful registration
       setTimeout(() => {
         navigate("/login");
-      }, 1000);
+      }, 2000);
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      // Error is handled in the signUp function
       console.error("Sign up error:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 

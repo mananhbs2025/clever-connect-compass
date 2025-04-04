@@ -9,9 +9,8 @@ const Index = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-    toast.success("Logged out successfully");
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
@@ -24,7 +23,7 @@ const Index = () => {
         {isAuthenticated && user ? (
           <>
             <p className="text-xl text-white/80 mb-8">
-              Welcome back, {user.name}! You're now logged in to our state-of-the-art platform.
+              Welcome back, {user.user_metadata?.name || user.email?.split('@')[0]}! You're now logged in to our state-of-the-art platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
