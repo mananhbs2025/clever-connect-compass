@@ -2,22 +2,38 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface StatsCardProps {
   title: string;
   value: number | null;
   icon: React.ReactNode;
   isLoading: boolean;
+  linkTo?: string;
 }
 
 export const StatsCard: React.FC<StatsCardProps> = ({ 
   title, 
   value, 
   icon, 
-  isLoading 
+  isLoading,
+  linkTo
 }) => {
+  const CardWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (linkTo) {
+      return (
+        <Link to={linkTo} className="block">
+          <Card className="transition-all hover:shadow-md cursor-pointer">
+            {children}
+          </Card>
+        </Link>
+      );
+    }
+    return <Card>{children}</Card>;
+  };
+
   return (
-    <Card>
+    <CardWrapper>
       <CardContent className="pt-6">
         <div className="flex items-center justify-between">
           <div>
@@ -38,6 +54,6 @@ export const StatsCard: React.FC<StatsCardProps> = ({
           </div>
         </div>
       </CardContent>
-    </Card>
+    </CardWrapper>
   );
 };

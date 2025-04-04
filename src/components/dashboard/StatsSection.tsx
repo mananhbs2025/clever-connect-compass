@@ -23,6 +23,7 @@ export const StatsSection: React.FC<StatsProps> = ({
         value={totalContacts}
         isLoading={isLoading}
         icon={<Users className="h-5 w-5 text-primary" />}
+        linkTo="/contacts"
       />
       <StatsCard
         title="Pending Follow-ups"
