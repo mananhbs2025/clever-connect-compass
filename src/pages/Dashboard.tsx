@@ -1,22 +1,24 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, Upload, Network, Bell, MessageSquare } from "lucide-react";
+import { LogOut, Upload, Network, Bell, MessageSquare, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { parseCSV } from "@/utils/csv-parser";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NetworkVisualizer } from "@/components/dashboard/NetworkVisualizer";
 import { ReminderSection } from "@/components/dashboard/ReminderSection";
-import { ChatbotSection } from "@/components/dashboard/ChatbotSection";
+import { FloatingChatbot } from "@/components/dashboard/FloatingChatbot";
+import { ConnectionsList } from "@/components/connections/ConnectionsList";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [hasConnections, setHasConnections] = useState<boolean | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [connections, setConnections] = useState<any[]>([]);
+  const [showChatbot, setShowChatbot] = useState(false);
 
   // Check if user has connections and fetch them
   useEffect(() => {
@@ -27,7 +29,9 @@ const Dashboard = () => {
         const { data, error } = await supabase
           .from('User_Connections')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
 
         if (error) throw error;
         
@@ -86,7 +90,9 @@ const Dashboard = () => {
       const { data: newConnections, error: fetchError } = await supabase
         .from('User_Connections')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
       
       if (fetchError) throw fetchError;
       
@@ -114,27 +120,14 @@ const Dashboard = () => {
           </Button>
         </header>
 
-        <Tabs defaultValue="connections" className="mb-8">
-          <TabsList className="w-full mb-6">
-            <TabsTrigger value="connections">
-              <Network className="h-4 w-4 mr-2" />
-              Connections
-            </TabsTrigger>
-            <TabsTrigger value="visualizer">
-              <Network className="h-4 w-4 mr-2" />
-              Visualizer
-            </TabsTrigger>
-            <TabsTrigger value="reminders">
-              <Bell className="h-4 w-4 mr-2" />
-              Reminders
-            </TabsTrigger>
-            <TabsTrigger value="chatbot">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Chatbot
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-8">
+          {/* Recent Connections Section */}
+          <section>
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-purple-800">Recent Connections</h2>
+              <p className="text-sm text-purple-600">Your 10 most recent connections</p>
+            </div>
 
-          <TabsContent value="connections" className="mt-0">
             {hasConnections === false && (
               <Card className="border border-purple-100 rounded-lg bg-white shadow-sm">
                 <CardHeader className="pb-2">
@@ -187,65 +180,58 @@ const Dashboard = () => {
                   </label>
                 </div>
                 
-                {connections.length > 0 ? (
-                  <Card className="border-purple-100 shadow-sm overflow-hidden">
-                    <div className="max-h-[60vh] overflow-y-auto">
-                      <Table>
-                        <TableHeader className="bg-purple-50 sticky top-0">
-                          <TableRow>
-                            <TableHead className="text-purple-800">Name</TableHead>
-                            <TableHead className="text-purple-800">Company</TableHead>
-                            <TableHead className="text-purple-800">Position</TableHead>
-                            <TableHead className="text-purple-800">Location</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {connections.map((connection, index) => (
-                            <TableRow key={index} className="hover:bg-purple-50">
-                              <TableCell className="font-medium text-purple-800">
-                                {connection["First Name"]} {connection["Last Name"]}
-                              </TableCell>
-                              <TableCell className="text-purple-700">{connection.Company || ""}</TableCell>
-                              <TableCell className="text-purple-700">{connection.Position || ""}</TableCell>
-                              <TableCell className="text-purple-700">{connection.Location || ""}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </Card>
-                ) : (
-                  <p className="text-purple-600 text-center py-8">Loading your connections...</p>
-                )}
+                <Card className="border-purple-100 shadow-sm overflow-hidden">
+                  <ConnectionsList connections={connections} />
+                </Card>
               </div>
             )}
-          </TabsContent>
+          </section>
 
-          <TabsContent value="visualizer" className="mt-0">
+          {/* Network Visualization Section */}
+          <section>
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-purple-800">Network Visualization</h2>
+              <p className="text-sm text-purple-600">Visual representation of your connections</p>
+            </div>
             <Card className="border-purple-100 shadow-sm">
               <CardContent className="p-6">
                 <NetworkVisualizer connections={connections} />
               </CardContent>
             </Card>
-          </TabsContent>
+          </section>
 
-          <TabsContent value="reminders" className="mt-0">
+          {/* Reminders Section */}
+          <section>
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-purple-800">Reminders</h2>
+              <p className="text-sm text-purple-600">Stay in touch with your network</p>
+            </div>
             <Card className="border-purple-100 shadow-sm">
               <CardContent className="p-6">
                 <ReminderSection connections={connections} />
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="chatbot" className="mt-0">
-            <Card className="border-purple-100 shadow-sm">
-              <CardContent className="p-6">
-                <ChatbotSection connections={connections} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          </section>
+        </div>
       </div>
+      
+      {/* Floating Chatbot Button */}
+      {!showChatbot && (
+        <Button 
+          onClick={() => setShowChatbot(true)}
+          className="fixed bottom-4 right-4 h-12 w-12 rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg p-0 flex items-center justify-center"
+        >
+          <MessageSquare className="h-6 w-6" />
+        </Button>
+      )}
+      
+      {/* Floating Chatbot */}
+      {showChatbot && (
+        <FloatingChatbot 
+          connections={connections} 
+          onClose={() => setShowChatbot(false)} 
+        />
+      )}
     </div>
   );
 };
