@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,9 +9,14 @@ import { parseCSV } from "@/utils/csv-parser";
 interface ContactImportModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onImportSuccess?: () => void; // Add callback for successful import
 }
 
-export const ContactImportModal: React.FC<ContactImportModalProps> = ({ isOpen, onClose }) => {
+export const ContactImportModal: React.FC<ContactImportModalProps> = ({ 
+  isOpen, 
+  onClose,
+  onImportSuccess 
+}) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,6 +65,12 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({ isOpen, 
       if (insertError) throw insertError;
 
       toast.success(`Imported ${contactsToInsert.length} contacts`);
+      
+      // Call the success callback to trigger data refetch
+      if (onImportSuccess) {
+        onImportSuccess();
+      }
+      
       onClose();
     } catch (error) {
       console.error('Contact import error:', error);

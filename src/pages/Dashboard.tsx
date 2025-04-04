@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ContactImportModal } from "@/components/ContactImportModal";
@@ -58,6 +59,7 @@ const Dashboard = () => {
     data: contacts,
     isLoading: isContactsLoading,
     error: contactsError,
+    refetch: refetchContacts,
   } = useQuery({
     queryKey: ["contacts"],
     queryFn: async () => {
@@ -171,12 +173,17 @@ const Dashboard = () => {
     toast.info("Add contact functionality coming soon");
   };
 
-  // Check if user has no contacts
+  // Check if user has no contacts and show import modal
   useEffect(() => {
     if (contacts && contacts.length === 0) {
       setShowImportModal(true);
     }
   }, [contacts]);
+
+  // Handler for successful import
+  const handleImportSuccess = () => {
+    refetchContacts();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -454,6 +461,7 @@ const Dashboard = () => {
       <ContactImportModal 
         isOpen={showImportModal} 
         onClose={() => setShowImportModal(false)} 
+        onImportSuccess={handleImportSuccess}
       />
     </div>
   );
