@@ -23,14 +23,16 @@ export const ContactsHeader: React.FC<ContactsHeaderProps> = ({
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Contact Directory</h1>
+            <h1 className="text-2xl font-bold text-gray-900">LinkedIn Connections</h1>
             <p className="text-sm text-gray-500">
-              {totalContacts} LinkedIn connections
+              {totalContacts > 0
+                ? `${totalContacts} connections`
+                : "No connections yet"}
             </p>
           </div>
         </div>
         <Button onClick={onOpenImportModal}>
-          <Plus className="h-4 w-4 mr-2" /> Refresh Connections
+          <Plus className="h-4 w-4 mr-2" /> {totalContacts > 0 ? "Refresh Connections" : "Connect LinkedIn"}
         </Button>
       </div>
     </div>

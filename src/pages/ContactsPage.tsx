@@ -29,8 +29,8 @@ const ContactsPage = () => {
   // Fetch directly from User_Connections table
   const {
     data: connections,
-    isLoading,
-    error,
+    isLoading: isLoadingConnections,
+    error: connectionsError,
     refetch: refetchConnections
   } = useQuery({
     queryKey: ["userConnections"],
@@ -56,11 +56,11 @@ const ContactsPage = () => {
 
   // Handle errors
   useEffect(() => {
-    if (error) {
+    if (connectionsError) {
       toast.error("Failed to load connections");
-      console.error(error);
+      console.error(connectionsError);
     }
-  }, [error]);
+  }, [connectionsError]);
 
   // Handle successful import to refresh the connections list
   const handleImportSuccess = () => {
@@ -84,7 +84,7 @@ const ContactsPage = () => {
             <CardDescription>View and manage all your LinkedIn connections</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isLoadingConnections ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
