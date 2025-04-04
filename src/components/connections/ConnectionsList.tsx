@@ -1,4 +1,3 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { PhoneCall, MailPlus } from "lucide-react";
@@ -65,10 +64,10 @@ export const ConnectionsList: React.FC<ConnectionsListProps> = ({ connections })
       <Table>
         <TableHeader className="sticky top-0 bg-white">
           <TableRow>
-            <TableHead>Contact</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Company</TableHead>
+            <TableHead>Position</TableHead>
             <TableHead>Location</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Last Contact</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -89,19 +88,12 @@ export const ConnectionsList: React.FC<ConnectionsListProps> = ({ connections })
                     <div className="text-xs text-muted-foreground">
                       {connection["Email Address"] || "No email"}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {connection["Position"] || ""}{connection["Position"] && connection["Company"] ? " at " : ""}{connection["Company"] || ""}
-                    </div>
                   </div>
                 </div>
               </TableCell>
+              <TableCell>{connection.Company || "—"}</TableCell>
+              <TableCell>{connection.Position || "—"}</TableCell>
               <TableCell>{connection.Location || "Unknown"}</TableCell>
-              <TableCell>
-                <Badge variant="secondary">
-                  Connected
-                </Badge>
-              </TableCell>
-              <TableCell>{formatConnectionDate(connection["Connected On"])}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button

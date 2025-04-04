@@ -196,6 +196,7 @@ const Dashboard = () => {
                           <TableRow>
                             <TableHead className="text-purple-800">Name</TableHead>
                             <TableHead className="text-purple-800">Company</TableHead>
+                            <TableHead className="text-purple-800">Position</TableHead>
                             <TableHead className="text-purple-800">Location</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -206,6 +207,7 @@ const Dashboard = () => {
                                 {connection["First Name"]} {connection["Last Name"]}
                               </TableCell>
                               <TableCell className="text-purple-700">{connection.Company || "—"}</TableCell>
+                              <TableCell className="text-purple-700">{connection.Position || "—"}</TableCell>
                               <TableCell className="text-purple-700">{connection.Location || "—"}</TableCell>
                             </TableRow>
                           ))}
