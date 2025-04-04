@@ -1,3 +1,4 @@
+
 import React from "react";
 import { format } from "date-fns";
 import { PhoneCall, MailPlus } from "lucide-react";
@@ -91,9 +92,9 @@ export const ConnectionsList: React.FC<ConnectionsListProps> = ({ connections })
                   </div>
                 </div>
               </TableCell>
-              <TableCell>{connection.Company || "—"}</TableCell>
-              <TableCell>{connection.Position || "—"}</TableCell>
-              <TableCell>{connection.Location || "Unknown"}</TableCell>
+              <TableCell>{connection.Company || ""}</TableCell>
+              <TableCell>{connection.Position || ""}</TableCell>
+              <TableCell>{connection.Location || ""}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button

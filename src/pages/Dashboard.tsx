@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -206,9 +205,9 @@ const Dashboard = () => {
                               <TableCell className="font-medium text-purple-800">
                                 {connection["First Name"]} {connection["Last Name"]}
                               </TableCell>
-                              <TableCell className="text-purple-700">{connection.Company || "—"}</TableCell>
-                              <TableCell className="text-purple-700">{connection.Position || "—"}</TableCell>
-                              <TableCell className="text-purple-700">{connection.Location || "—"}</TableCell>
+                              <TableCell className="text-purple-700">{connection.Company || ""}</TableCell>
+                              <TableCell className="text-purple-700">{connection.Position || ""}</TableCell>
+                              <TableCell className="text-purple-700">{connection.Location || ""}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
