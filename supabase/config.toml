@@ -1,1 +1,39 @@
+
 project_id = "xixicikohbspyfdkatwv"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost:54321"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+[realtime]
+enabled = true
+
+[functions.chatbot]
+templates = []
+serve = 'import { serve } from "https://deno.land/std@0.168.0/http/server.ts"; serve((req) => new Response("Not found", { status: 404 }));'
+verify_jwt = true
+
+[functions.anthropic-chat]
+templates = []
+serve = 'import { serve } from "https://deno.land/std@0.168.0/http/server.ts"; serve((req) => new Response("Not found", { status: 404 }));'
+verify_jwt = true

@@ -3,11 +3,15 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, UserCircle, Bot } from "lucide-react";
+import { Send, UserCircle, Bot, RotateCcw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ChatbotSectionProps {
   connections: any[];
 }
+
+type AIProvider = "openai" | "anthropic";
 
 export const ChatbotSection: React.FC<ChatbotSectionProps> = ({ connections }) => {
   const [messages, setMessages] = useState([
@@ -19,6 +23,8 @@ export const ChatbotSection: React.FC<ChatbotSectionProps> = ({ connections }) =
   ]);
   
   const [inputValue, setInputValue] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentProvider, setCurrentProvider] = useState<AIProvider>("anthropic");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -29,8 +35,8 @@ export const ChatbotSection: React.FC<ChatbotSectionProps> = ({ connections }) =
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isProcessing) return;
     
     // Add user message
     const userMessage = {
@@ -39,18 +45,148 @@ export const ChatbotSection: React.FC<ChatbotSectionProps> = ({ connections }) =
       sender: "user" as const,
     };
     
-    setMessages([...messages, userMessage]);
+    setMessages(prevMessages => [...prevMessages, userMessage]);
     setInputValue("");
+    setIsProcessing(true);
     
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse = generateBotResponse(inputValue, connections);
-      setMessages(prevMessages => [...prevMessages, {
-        id: Date.now(),
-        text: botResponse,
-        sender: "bot" as const,
-      }]);
-    }, 1000);
+    // Add a loading message from the bot
+    const loadingMessageId = Date.now() + 1;
+    setMessages(prevMessages => [...prevMessages, {
+      id: loadingMessageId,
+      text: "Thinking...",
+      sender: "bot" as const,
+      isLoading: true,
+    }]);
+    
+    try {
+      // Get the current user's session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        updateBotMessage(loadingMessageId, "Sorry, there was an error with your session. Please try logging in again.", true);
+        toast.error("Authentication error");
+        return;
+      }
+      
+      if (!sessionData?.session) {
+        updateBotMessage(loadingMessageId, "Sorry, you need to be logged in to use the chatbot.", true);
+        return;
+      }
+      
+      const endpoint = currentProvider === "anthropic" ? 'anthropic-chat' : 'chatbot';
+      console.log(`Calling ${currentProvider} edge function...`);
+      
+      // Call our Edge Function with the user's query
+      const { data, error } = await supabase.functions.invoke(endpoint, {
+        body: {
+          query: inputValue,
+          accessToken: sessionData.session.access_token,
+        },
+      });
+      
+      console.log(`${currentProvider} response:`, data ? "Success" : "No data", error ? "Error" : "No error");
+      
+      if (error) {
+        console.error(`${currentProvider} function error:`, error);
+        updateBotMessage(
+          loadingMessageId, 
+          `Sorry, I couldn't process your request. Error: ${error.message || "Unknown error"}`, 
+          true
+        );
+        
+        // If Anthropic fails, try OpenAI as fallback if we're not already using it
+        if (currentProvider === "anthropic") {
+          tryFallbackProvider(inputValue, sessionData.session.access_token, loadingMessageId);
+        } else {
+          toast.error(`Failed to get a response from the assistant`);
+        }
+      } else if (data.error) {
+        console.error(`${currentProvider} API error:`, data.error);
+        updateBotMessage(
+          loadingMessageId, 
+          `Sorry, I encountered an issue: ${data.error}${data.details ? ` (${data.details})` : ""}`, 
+          true
+        );
+        
+        // If Anthropic fails, try OpenAI as fallback if we're not already using it
+        if (currentProvider === "anthropic") {
+          tryFallbackProvider(inputValue, sessionData.session.access_token, loadingMessageId);
+        } else {
+          toast.error(`API error: ${data.error}`);
+        }
+      } else if (!data.response) {
+        console.error("No response in data:", data);
+        updateBotMessage(
+          loadingMessageId, 
+          "Sorry, I received an empty response. Please try again.", 
+          true
+        );
+        
+        // If Anthropic fails, try OpenAI as fallback if we're not already using it
+        if (currentProvider === "anthropic") {
+          tryFallbackProvider(inputValue, sessionData.session.access_token, loadingMessageId);
+        } else {
+          toast.error("Received empty response");
+        }
+      } else {
+        // Update the loading message with the actual response
+        updateBotMessage(loadingMessageId, data.response);
+      }
+    } catch (error) {
+      console.error("Error processing message:", error);
+      updateBotMessage(
+        loadingMessageId, 
+        `Sorry, something went wrong: ${error.message || "Unknown error"}`, 
+        true
+      );
+      toast.error("An error occurred while processing your message");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const tryFallbackProvider = async (query: string, accessToken: string, messageId: number) => {
+    try {
+      console.log("Trying fallback provider (OpenAI)...");
+      updateBotMessage(messageId, "The first AI provider failed. Trying an alternative...", true);
+      
+      const { data, error } = await supabase.functions.invoke('chatbot', {
+        body: {
+          query,
+          accessToken,
+        },
+      });
+      
+      if (error || data.error || !data.response) {
+        console.error("Fallback provider also failed:", error || data.error);
+        updateBotMessage(
+          messageId, 
+          "Sorry, both AI providers failed to respond. Please try again later.", 
+          true
+        );
+        toast.error("All AI providers failed");
+      } else {
+        updateBotMessage(messageId, data.response);
+      }
+    } catch (fallbackError) {
+      console.error("Error with fallback provider:", fallbackError);
+      updateBotMessage(
+        messageId, 
+        "Sorry, both AI providers failed. Please try again later.", 
+        true
+      );
+    }
+  };
+  
+  const updateBotMessage = (id: number, text: string, isError: boolean = false) => {
+    setMessages(prevMessages => 
+      prevMessages.map(message => 
+        message.id === id 
+          ? { ...message, text, isLoading: false, isError } 
+          : message
+      )
+    );
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -58,9 +194,55 @@ export const ChatbotSection: React.FC<ChatbotSectionProps> = ({ connections }) =
       handleSendMessage();
     }
   };
+  
+  const toggleProvider = () => {
+    setCurrentProvider(prev => prev === "openai" ? "anthropic" : "openai");
+    toast.info(`Switched to ${currentProvider === "openai" ? "Anthropic Claude" : "OpenAI"} model`);
+  };
+
+  const handleFallbackSendMessage = () => {
+    if (!inputValue.trim() || isProcessing) return;
+    
+    // Add user message
+    const userMessageId = Date.now();
+    setMessages(prevMessages => [...prevMessages, {
+      id: userMessageId,
+      text: inputValue,
+      sender: "user" as const,
+    }]);
+    setInputValue("");
+    setIsProcessing(true);
+    
+    // Simulate bot response with the local function
+    setTimeout(() => {
+      const botResponse = generateBotResponse(inputValue, connections);
+      setMessages(prevMessages => [...prevMessages, {
+        id: Date.now(),
+        text: botResponse,
+        sender: "bot" as const,
+      }]);
+      setIsProcessing(false);
+    }, 1000);
+  };
 
   return (
     <div className="flex flex-col h-[500px]">
+      <div className="flex justify-between items-center mb-2">
+        <div className="text-sm text-purple-600 flex items-center">
+          <Bot className="h-4 w-4 mr-1" />
+          Using: {currentProvider === "anthropic" ? "Anthropic Claude" : "OpenAI"}
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={toggleProvider} 
+          className="h-8 text-xs text-purple-600 hover:bg-purple-50"
+        >
+          <RotateCcw className="h-3 w-3 mr-1" />
+          Switch Model
+        </Button>
+      </div>
+      
       <div className="flex-1 overflow-y-auto mb-4 bg-purple-50 rounded-lg border border-purple-200 p-4">
         {messages.map((message) => (
           <div
@@ -70,7 +252,9 @@ export const ChatbotSection: React.FC<ChatbotSectionProps> = ({ connections }) =
             <Card className={`max-w-[80%] ${
               message.sender === "user" 
                 ? "bg-purple-600 text-white border-purple-700" 
-                : "bg-white border-purple-200"
+                : message.isError
+                  ? "bg-red-50 border-red-200" 
+                  : "bg-white border-purple-200"
             }`}>
               <CardContent className="p-3">
                 <div className="flex gap-2">
@@ -81,8 +265,14 @@ export const ChatbotSection: React.FC<ChatbotSectionProps> = ({ connections }) =
                       <Bot className="h-5 w-5 text-purple-600" />
                     )}
                   </div>
-                  <div className={message.sender === "user" ? "text-white" : "text-purple-800"}>
-                    {message.text}
+                  <div className={message.sender === "user" ? "text-white" : message.isError ? "text-red-600" : "text-purple-800"}>
+                    {message.isLoading ? (
+                      <span className="flex items-center">
+                        <span className="animate-pulse">{message.text}</span>
+                      </span>
+                    ) : (
+                      message.text
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -100,10 +290,11 @@ export const ChatbotSection: React.FC<ChatbotSectionProps> = ({ connections }) =
           onKeyPress={handleKeyPress}
           placeholder="Ask about your network..."
           className="border-purple-200 focus:border-purple-400 focus:ring-purple-400"
+          disabled={isProcessing}
         />
         <Button 
           onClick={handleSendMessage} 
-          disabled={!inputValue.trim()}
+          disabled={!inputValue.trim() || isProcessing}
           className="bg-purple-600 hover:bg-purple-700 text-white"
         >
           <Send className="h-4 w-4" />
@@ -113,7 +304,7 @@ export const ChatbotSection: React.FC<ChatbotSectionProps> = ({ connections }) =
   );
 };
 
-// Helper function to generate bot responses
+// Helper function to generate bot responses (fallback if API isn't working)
 function generateBotResponse(userInput: string, connections: any[]): string {
   const input = userInput.toLowerCase();
   

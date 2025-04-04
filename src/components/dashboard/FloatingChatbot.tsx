@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, UserCircle, Bot, X, AlertTriangle } from "lucide-react";
+import { Send, UserCircle, Bot, X, AlertTriangle, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -20,6 +20,8 @@ type MessageType = {
   isError?: boolean;
 };
 
+type AIProvider = "openai" | "anthropic";
+
 export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, onClose }) => {
   const [messages, setMessages] = useState<MessageType[]>([
     {
@@ -31,6 +33,7 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
   
   const [inputValue, setInputValue] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentProvider, setCurrentProvider] = useState<AIProvider>("anthropic");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -95,36 +98,49 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
         return;
       }
       
-      console.log("Calling chatbot edge function...");
+      const endpoint = currentProvider === "anthropic" ? 'anthropic-chat' : 'chatbot';
+      console.log(`Calling ${currentProvider} edge function...`);
       
       // Call our Edge Function with the user's query
-      const { data, error } = await supabase.functions.invoke('chatbot', {
+      const { data, error } = await supabase.functions.invoke(endpoint, {
         body: {
           query: inputValue,
           accessToken: sessionData.session.access_token,
         },
       });
       
-      console.log("Edge function response:", data ? "Success" : "No data", error ? "Error" : "No error");
+      console.log(`${currentProvider} response:`, data ? "Success" : "No data", error ? "Error" : "No error");
       
       if (error) {
-        console.error("Edge function error:", error);
+        console.error(`${currentProvider} function error:`, error);
         updateMessage(
           loadingMessageId, 
           `Sorry, I couldn't process your request. Error: ${error.message || "Unknown error"}`, 
           false, 
           true
         );
-        toast.error("Failed to get a response from the assistant");
+        
+        // If Anthropic fails, try OpenAI as fallback if we're not already using it
+        if (currentProvider === "anthropic") {
+          tryFallbackProvider(inputValue, sessionData.session.access_token, loadingMessageId);
+        } else {
+          toast.error("Failed to get a response from the assistant");
+        }
       } else if (data.error) {
-        console.error("ChatGPT API error:", data.error);
+        console.error(`${currentProvider} API error:`, data.error);
         updateMessage(
           loadingMessageId, 
           `Sorry, I encountered an issue: ${data.error}${data.details ? ` (${data.details})` : ""}`, 
           false, 
           true
         );
-        toast.error("API error: " + data.error);
+        
+        // If Anthropic fails, try OpenAI as fallback if we're not already using it
+        if (currentProvider === "anthropic") {
+          tryFallbackProvider(inputValue, sessionData.session.access_token, loadingMessageId);
+        } else {
+          toast.error("API error: " + data.error);
+        }
       } else if (!data.response) {
         console.error("No response in data:", data);
         updateMessage(
@@ -133,7 +149,13 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
           false, 
           true
         );
-        toast.error("Received empty response");
+        
+        // If Anthropic fails, try OpenAI as fallback if we're not already using it
+        if (currentProvider === "anthropic") {
+          tryFallbackProvider(inputValue, sessionData.session.access_token, loadingMessageId);
+        } else {
+          toast.error("Received empty response");
+        }
       } else {
         // Update the loading message with the actual response
         updateMessage(loadingMessageId, data.response, false);
@@ -150,6 +172,46 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
     } finally {
       setIsProcessing(false);
     }
+  };
+  
+  const tryFallbackProvider = async (query: string, accessToken: string, messageId: string) => {
+    try {
+      console.log("Trying fallback provider (OpenAI)...");
+      updateMessage(messageId, "The first AI provider failed. Trying an alternative...", true);
+      
+      const { data, error } = await supabase.functions.invoke('chatbot', {
+        body: {
+          query,
+          accessToken,
+        },
+      });
+      
+      if (error || data.error || !data.response) {
+        console.error("Fallback provider also failed:", error || data.error);
+        updateMessage(
+          messageId, 
+          "Sorry, both AI providers failed to respond. Please try again later.", 
+          false, 
+          true
+        );
+        toast.error("All AI providers failed");
+      } else {
+        updateMessage(messageId, data.response);
+      }
+    } catch (fallbackError) {
+      console.error("Error with fallback provider:", fallbackError);
+      updateMessage(
+        messageId, 
+        "Sorry, both AI providers failed. Please try again later.", 
+        false, 
+        true
+      );
+    }
+  };
+
+  const toggleProvider = () => {
+    setCurrentProvider(prev => prev === "openai" ? "anthropic" : "openai");
+    toast.info(`Switched to ${currentProvider === "openai" ? "Anthropic Claude" : "OpenAI"} model`);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -183,14 +245,28 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
           <Bot className="h-5 w-5" />
           <h3 className="font-medium">Nubble Assistant</h3>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onClose} 
-          className="h-8 w-8 p-0 text-white hover:bg-purple-700 rounded-full"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={toggleProvider} 
+            className="h-7 w-7 p-0 text-white hover:bg-purple-700 rounded-full"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClose} 
+            className="h-7 w-7 p-0 text-white hover:bg-purple-700 rounded-full"
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+      
+      <div className="p-2 bg-purple-100 text-xs text-purple-700 flex items-center justify-center">
+        Using: {currentProvider === "anthropic" ? "Anthropic Claude" : "OpenAI"}
       </div>
       
       {/* Messages Area */}
@@ -265,7 +341,7 @@ export const FloatingChatbot: React.FC<FloatingChatbotProps> = ({ connections, o
   );
 };
 
-// Helper function to generate bot responses (fallback if OpenAI isn't set up)
+// Helper function to generate bot responses (fallback if API isn't set up)
 function generateBotResponse(userInput: string, connections: any[]): string {
   const input = userInput.toLowerCase();
   
