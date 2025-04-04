@@ -35,14 +35,18 @@ const ContactsPage = () => {
   } = useQuery({
     queryKey: ["userConnections"],
     queryFn: async () => {
+      console.log("Fetching user connections");
       const { data, error } = await supabase
         .from("User_Connections")
         .select("*")
         .order("First Name", { ascending: true });
 
       if (error) {
+        console.error("Error fetching connections:", error);
         throw error;
       }
+      
+      console.log("Fetched connections:", data);
       return data as Connection[];
     },
   });
@@ -50,6 +54,7 @@ const ContactsPage = () => {
   // Get total count of connections
   useEffect(() => {
     if (connections) {
+      console.log("Setting total connections:", connections.length);
       setTotalConnections(connections.length);
     }
   }, [connections]);
@@ -80,7 +85,7 @@ const ContactsPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Contact Directory</CardTitle>
+            <CardTitle>LinkedIn Connections</CardTitle>
             <CardDescription>View and manage all your LinkedIn connections</CardDescription>
           </CardHeader>
           <CardContent>
