@@ -30,12 +30,13 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({ isOpen, 
       // Parse CSV
       const contacts = await parseCSV(selectedFile);
 
-      // Upload CSV to Supabase storage
-      const userId = supabase.auth.getUser().data.user?.id;
-      if (!userId) {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         throw new Error("User not authenticated");
       }
 
+      const userId = user.id;
       const fileName = `${userId}/contacts_${Date.now()}.csv`;
       const { error: uploadError } = await supabase.storage
         .from('contact_uploads')
