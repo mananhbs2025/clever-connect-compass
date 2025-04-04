@@ -50,6 +50,7 @@ const Dashboard = () => {
 
       // Parse the CSV file
       const connections = await parseCSV(file);
+      console.log("Parsed connections:", connections);
 
       // Format connections for the database
       const connectionsToInsert = connections.map(connection => ({
@@ -64,17 +65,21 @@ const Dashboard = () => {
       }));
 
       // Insert connections into the database
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('User_Connections')
         .insert(connectionsToInsert);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Upload error:", error);
+        throw error;
+      }
 
+      console.log("Upload success:", data);
       toast.success(`Successfully imported ${connectionsToInsert.length} connections`);
       setHasConnections(true);
     } catch (error) {
       console.error("Error uploading connections:", error);
-      toast.error("Failed to import connections. Please check your CSV format.");
+      toast.error("Failed to import connections. Error: " + error.message);
     } finally {
       setIsUploading(false);
     }
