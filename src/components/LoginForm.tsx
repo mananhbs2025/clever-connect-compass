@@ -27,7 +27,7 @@ const LoginForm = () => {
     
     try {
       await login(email, password);
-      navigate("/"); // Redirect to home page after login
+      navigate("/dashboard"); // Redirect to dashboard page after login
     } catch (error) {
       // Error is handled in the login function
       console.error("Login error:", error);

@@ -4,10 +4,18 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleLogout = async () => {
     await logout();
@@ -38,8 +46,9 @@ const Index = () => {
                 size="lg" 
                 variant="outline" 
                 className="border-white text-white hover:bg-white/10"
+                onClick={() => navigate("/dashboard")}
               >
-                Explore Features
+                Go to Dashboard
               </Button>
             </div>
           </>
