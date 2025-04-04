@@ -23,14 +23,14 @@ export const ContactsHeader: React.FC<ContactsHeaderProps> = ({
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">All Contacts</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Contact Directory</h1>
             <p className="text-sm text-gray-500">
-              {totalContacts} contacts in your network
+              {totalContacts} LinkedIn connections
             </p>
           </div>
         </div>
         <Button onClick={onOpenImportModal}>
-          <Plus className="h-4 w-4 mr-2" /> Import Contacts
+          <Plus className="h-4 w-4 mr-2" /> Refresh Connections
         </Button>
       </div>
     </div>

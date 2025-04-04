@@ -11,65 +11,68 @@ import { ContactsHeader } from "@/components/contacts/ContactsHeader";
 import { ContactsList } from "@/components/contacts/ContactsList";
 import { EmptyContactsState } from "@/components/contacts/EmptyContactsState";
 
-interface Contact {
-  id: string;
-  name: string;
-  email: string | null;
-  status: string | null;
-  last_contact: string | null;
+interface Connection {
+  "First Name": string;
+  "Last Name": string;
+  "Email Address": string;
+  "Connected On": string;
+  Company: string;
+  Position: string;
+  URL: string;
 }
 
 const ContactsPage = () => {
   const { user } = useAuth();
   const [showImportModal, setShowImportModal] = useState(false);
-  const [totalContacts, setTotalContacts] = useState<number>(0);
+  const [totalConnections, setTotalConnections] = useState<number>(0);
 
-  // Fetch all contacts from Supabase with a properly defined queryKey
+  // Fetch directly from User_Connections table
   const {
-    data: contacts,
+    data: connections,
     isLoading,
     error,
-    refetch: refetchContacts
+    refetch: refetchConnections
   } = useQuery({
-    queryKey: ["allContacts"],
+    queryKey: ["userConnections"],
     queryFn: async () => {
-      const { data, error } = await from.contacts()
+      const { data, error } = await supabase
+        .from("User_Connections")
         .select("*")
-        .order("name", { ascending: true });
+        .order("First Name", { ascending: true });
 
       if (error) {
         throw error;
       }
-      return data as Contact[];
+      return data as Connection[];
     },
   });
 
-  // Get total count of contacts
+  // Get total count of connections
   useEffect(() => {
-    if (contacts) {
-      setTotalContacts(contacts.length);
+    if (connections) {
+      setTotalConnections(connections.length);
     }
-  }, [contacts]);
+  }, [connections]);
 
   // Handle errors
   useEffect(() => {
     if (error) {
-      toast.error("Failed to load contacts");
+      toast.error("Failed to load connections");
       console.error(error);
     }
   }, [error]);
 
-  // Handle successful import to refresh the contacts list
+  // Handle successful import to refresh the connections list
   const handleImportSuccess = () => {
-    refetchContacts();
-    toast.success("Contacts imported successfully");
+    refetchConnections();
+    toast.success("Connections refreshed successfully");
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <ContactsHeader 
-        totalContacts={totalContacts} 
+        totalContacts={totalConnections} 
         onOpenImportModal={() => setShowImportModal(true)} 
       />
 
@@ -78,15 +81,15 @@ const ContactsPage = () => {
         <Card>
           <CardHeader>
             <CardTitle>Contact Directory</CardTitle>
-            <CardDescription>View and manage all your contacts</CardDescription>
+            <CardDescription>View and manage all your LinkedIn connections</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : contacts && contacts.length > 0 ? (
-              <ContactsList contacts={contacts} />
+            ) : connections && connections.length > 0 ? (
+              <ContactsList connections={connections} />
             ) : (
               <EmptyContactsState onOpenImportModal={() => setShowImportModal(true)} />
             )}
