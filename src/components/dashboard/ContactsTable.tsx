@@ -66,7 +66,7 @@ export const ContactsTable: React.FC<ContactsTableProps> = ({
               <TableRow key={contact.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center">
-                    <Link to="/contacts" className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2 hover:bg-gray-300 transition-colors">
+                    <Link to="/connections" className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2 hover:bg-gray-300 transition-colors">
                       <User className="h-4 w-4 text-gray-500" />
                     </Link>
                     <div>

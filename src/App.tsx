@@ -11,7 +11,7 @@ import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
-import ContactsPage from "./pages/ContactsPage";
+import LinkedInConnectionsPage from "./pages/LinkedInConnectionsPage";
 
 const queryClient = new QueryClient();
 
@@ -31,8 +31,8 @@ const App = () => (
               element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
             />
             <Route 
-              path="/contacts" 
-              element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} 
+              path="/connections" 
+              element={<ProtectedRoute><LinkedInConnectionsPage /></ProtectedRoute>} 
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
