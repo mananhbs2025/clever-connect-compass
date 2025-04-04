@@ -193,6 +193,7 @@ const Dashboard = () => {
                             <TableHead>Email</TableHead>
                             <TableHead>Company</TableHead>
                             <TableHead>Position</TableHead>
+                            <TableHead>Location</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -204,6 +205,7 @@ const Dashboard = () => {
                               <TableCell>{connection["Email Address"]}</TableCell>
                               <TableCell>{connection.Company}</TableCell>
                               <TableCell>{connection.Position}</TableCell>
+                              <TableCell>{connection.Location || "Unknown"}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>

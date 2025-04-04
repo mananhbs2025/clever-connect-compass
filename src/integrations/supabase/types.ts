@@ -9,63 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      activities: {
-        Row: {
-          contact_name: string
-          created_at: string | null
-          id: string
-          scheduled_date: string
-          type: string
-          user_id: string | null
-        }
-        Insert: {
-          contact_name: string
-          created_at?: string | null
-          id?: string
-          scheduled_date: string
-          type: string
-          user_id?: string | null
-        }
-        Update: {
-          contact_name?: string
-          created_at?: string | null
-          id?: string
-          scheduled_date?: string
-          type?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      contacts: {
-        Row: {
-          created_at: string | null
-          email: string | null
-          id: string
-          last_contact: string | null
-          name: string
-          status: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          last_contact?: string | null
-          name: string
-          status?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          last_contact?: string | null
-          name?: string
-          status?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -95,37 +38,43 @@ export type Database = {
       }
       User_Connections: {
         Row: {
-          Company: string
-          "Connected On": string
-          "Email Address": string
+          Company: string | null
+          "Connected On": string | null
+          created_at: string
+          "Email Address": string | null
           "First Name": string
+          id: string
           "Last Name": string
-          Location: string
-          Position: string
-          URL: string
-          user_id: string | null
+          Location: string | null
+          Position: string | null
+          URL: string | null
+          user_id: string
         }
         Insert: {
-          Company: string
-          "Connected On": string
-          "Email Address": string
+          Company?: string | null
+          "Connected On"?: string | null
+          created_at?: string
+          "Email Address"?: string | null
           "First Name": string
+          id?: string
           "Last Name": string
-          Location?: string
-          Position: string
-          URL: string
-          user_id?: string | null
+          Location?: string | null
+          Position?: string | null
+          URL?: string | null
+          user_id: string
         }
         Update: {
-          Company?: string
-          "Connected On"?: string
-          "Email Address"?: string
+          Company?: string | null
+          "Connected On"?: string | null
+          created_at?: string
+          "Email Address"?: string | null
           "First Name"?: string
+          id?: string
           "Last Name"?: string
-          Location?: string
-          Position?: string
-          URL?: string
-          user_id?: string | null
+          Location?: string | null
+          Position?: string | null
+          URL?: string | null
+          user_id?: string
         }
         Relationships: []
       }
