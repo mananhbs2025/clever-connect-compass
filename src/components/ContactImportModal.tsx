@@ -55,23 +55,27 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({
 
       if (uploadError) throw uploadError;
 
-      // Bulk insert contacts
-      const contactsToInsert = contacts.map(contact => ({
-        name: contact.name || '',
-        email: contact.email || null,
+      // Bulk insert contacts as User_Connections
+      const connectionsToInsert = contacts.map(contact => ({
+        "First Name": contact.firstName || '',
+        "Last Name": contact.lastName || '',
+        "Email Address": contact.email || null,
+        Company: contact.company || null,
+        Position: contact.position || null,
+        Location: contact.location || null,
+        "Connected On": new Date().toISOString().split('T')[0],
+        URL: contact.profileUrl || null,
         user_id: userId,
-        status: 'New Lead',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       }));
 
       const { error: insertError } = await supabase
-        .from('contacts')
-        .insert(contactsToInsert);
+        .from('User_Connections')
+        .insert(connectionsToInsert);
 
       if (insertError) throw insertError;
 
-      toast.success(`Imported ${contactsToInsert.length} contacts`);
+      toast.success(`Imported ${connectionsToInsert.length} contacts`);
       
       // Call the success callback to trigger data refetch
       if (onImportSuccess) {
@@ -109,27 +113,11 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({
         return;
       }
 
-      // Format connections for insertion
-      const contactsToInsert = connections.map(connection => ({
-        name: `${connection['First Name']} ${connection['Last Name']}`,
-        email: connection['Email Address'],
-        status: 'Imported',
-        user_id: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        last_contact: connection['Connected On'] || null,
-      }));
-
-      // Insert connections as contacts
-      const { error: insertError } = await supabase
-        .from('contacts')
-        .insert(contactsToInsert);
-
-      if (insertError) throw insertError;
-
-      toast.success(`Successfully imported ${connections.length} connections`);
+      // We're already working with User_Connections, so no need to insert them again
+      // Instead, we'll just show a success message
+      toast.success(`Successfully loaded ${connections.length} connections`);
       
-      // Refresh contacts list
+      // Refresh connections list
       if (onImportSuccess) {
         onImportSuccess();
       }

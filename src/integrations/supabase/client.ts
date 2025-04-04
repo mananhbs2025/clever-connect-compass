@@ -13,7 +13,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 // Type-safe helper functions for accessing tables
 export const from = {
-  contacts: () => supabase.from('contacts'),
-  activities: () => supabase.from('activities'),
   profiles: () => supabase.from('profiles'),
+  userConnections: () => supabase.from('User_Connections'),
 };
