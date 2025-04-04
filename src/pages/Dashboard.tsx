@@ -28,7 +28,7 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, from } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { format, isToday, isTomorrow } from "date-fns";
@@ -60,8 +60,7 @@ const Dashboard = () => {
   } = useQuery({
     queryKey: ["contacts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("contacts")
+      const { data, error } = await from.contacts()
         .select("*")
         .order("created_at", { ascending: false })
         .limit(3);
@@ -81,8 +80,7 @@ const Dashboard = () => {
   } = useQuery({
     queryKey: ["activities"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("activities")
+      const { data, error } = await from.activities()
         .select("*")
         .order("scheduled_date", { ascending: true })
         .limit(3);
@@ -102,10 +100,14 @@ const Dashboard = () => {
   } = useQuery({
     queryKey: ["contactStats"],
     queryFn: async () => {
+      const totalContactsQuery = from.contacts().select("id", { count: "exact", head: true });
+      const pendingFollowupsQuery = from.contacts().select("id", { count: "exact", head: true }).eq("status", "Following Up");
+      const recentActivitiesQuery = from.activities().select("id", { count: "exact", head: true });
+
       const [totalContactsResult, pendingFollowupsResult, recentActivitiesResult] = await Promise.all([
-        supabase.from("contacts").select("id", { count: "exact", head: true }),
-        supabase.from("contacts").select("id", { count: "exact", head: true }).eq("status", "Following Up"),
-        supabase.from("activities").select("id", { count: "exact", head: true }),
+        totalContactsQuery,
+        pendingFollowupsQuery,
+        recentActivitiesQuery
       ]);
 
       if (totalContactsResult.error || pendingFollowupsResult.error || recentActivitiesResult.error) {
