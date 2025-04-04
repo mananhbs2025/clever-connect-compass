@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ContactsHeaderProps {
@@ -27,21 +27,15 @@ export const ContactsHeader: React.FC<ContactsHeaderProps> = ({
             <p className="text-sm text-gray-500">
               {totalContacts > 0
                 ? `${totalContacts} connections loaded`
-                : "No connections loaded"}
+                : "No connections loaded - Please check database connection"}
             </p>
           </div>
         </div>
-        <Button onClick={onOpenImportModal}>
-          {totalContacts > 0 ? (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2" /> Refresh Connections
-            </>
-          ) : (
-            <>
-              <Plus className="h-4 w-4 mr-2" /> Load Connections
-            </>
-          )}
-        </Button>
+        {totalContacts === 0 && (
+          <Button onClick={onOpenImportModal}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh Connections
+          </Button>
+        )}
       </div>
     </div>
   );

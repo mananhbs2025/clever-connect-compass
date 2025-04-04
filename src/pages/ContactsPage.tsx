@@ -26,7 +26,7 @@ const ContactsPage = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [totalConnections, setTotalConnections] = useState<number>(0);
 
-  // Fetch User_Connections table data
+  // Fetch User_Connections table data - using * to fetch all columns
   const {
     data: connections,
     isLoading: isLoadingConnections,
@@ -36,19 +36,21 @@ const ContactsPage = () => {
     queryKey: ["userConnections"],
     queryFn: async () => {
       console.log("Fetching user connections");
-      const { data, error } = await supabase
+      
+      // This query should return all data from User_Connections
+      const { data, error, count } = await supabase
         .from("User_Connections")
-        .select("*")
-        .order("First Name", { ascending: true });
+        .select("*", { count: 'exact' });
 
       if (error) {
         console.error("Error fetching connections:", error);
         throw error;
       }
       
-      console.log("Fetched connections:", data);
+      console.log("Connections query response:", { data, count });
       return data as Connection[];
     },
+    enabled: !!user, // Only run query when user is authenticated
   });
 
   // Get total count of connections
@@ -63,7 +65,7 @@ const ContactsPage = () => {
   useEffect(() => {
     if (connectionsError) {
       toast.error("Failed to load connections");
-      console.error(connectionsError);
+      console.error("Connections error:", connectionsError);
     }
   }, [connectionsError]);
 
