@@ -63,6 +63,7 @@ const Dashboard = () => {
         "Company": connection.company || "",
         "Position": connection.position || "",
         "Connected On": connection.connectedOn || new Date().toISOString().split('T')[0],
+        "Location": connection.location || "",
         "URL": connection.profileUrl || "",
         "user_id": user.id
       }));

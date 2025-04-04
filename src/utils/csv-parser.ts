@@ -5,6 +5,7 @@ export interface ContactData {
   email?: string;
   company?: string;
   position?: string;
+  location?: string;
   connectedOn?: string;
   profileUrl?: string;
   [key: string]: string | undefined;
@@ -40,6 +41,8 @@ export const parseCSV = (file: File): Promise<ContactData[]> => {
                 contact.company = value;
               } else if (header.includes('position') || header.includes('title')) {
                 contact.position = value;
+              } else if (header.includes('location') || header.includes('city') || header.includes('state')) {
+                contact.location = value;
               } else if (header.includes('connect') && header.includes('on')) {
                 contact.connectedOn = value;
               } else if (header.includes('url') || header.includes('profile')) {

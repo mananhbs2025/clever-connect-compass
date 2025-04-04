@@ -100,6 +100,7 @@ export type Database = {
           "Email Address": string
           "First Name": string
           "Last Name": string
+          Location: string
           Position: string
           URL: string
           user_id: string | null
@@ -110,6 +111,7 @@ export type Database = {
           "Email Address": string
           "First Name": string
           "Last Name": string
+          Location?: string
           Position: string
           URL: string
           user_id?: string | null
@@ -120,6 +122,7 @@ export type Database = {
           "Email Address"?: string
           "First Name"?: string
           "Last Name"?: string
+          Location?: string
           Position?: string
           URL?: string
           user_id?: string | null

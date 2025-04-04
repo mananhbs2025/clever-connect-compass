@@ -15,6 +15,7 @@ interface Connection {
   "Connected On": string;
   Company: string;
   Position: string;
+  Location: string;
   URL: string;
   user_id?: string;
 }
@@ -65,6 +66,7 @@ export const ConnectionsList: React.FC<ConnectionsListProps> = ({ connections })
         <TableHeader className="sticky top-0 bg-white">
           <TableRow>
             <TableHead>Contact</TableHead>
+            <TableHead>Location</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Last Contact</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -93,6 +95,7 @@ export const ConnectionsList: React.FC<ConnectionsListProps> = ({ connections })
                   </div>
                 </div>
               </TableCell>
+              <TableCell>{connection.Location || "Unknown"}</TableCell>
               <TableCell>
                 <Badge variant="secondary">
                   Connected

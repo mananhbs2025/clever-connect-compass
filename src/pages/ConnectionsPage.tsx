@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ConnectionsList } from "@/components/connections/ConnectionsList";
 
 interface Connection {
   "First Name": string;
@@ -13,6 +14,7 @@ interface Connection {
   Company: string;
   Position: string;
   "Connected On": string;
+  Location: string;
   URL: string;
 }
 
@@ -78,35 +80,7 @@ const ConnectionsPage = () => {
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-muted">
-                    <th className="text-left p-2 font-medium">Name</th>
-                    <th className="text-left p-2 font-medium">Email</th>
-                    <th className="text-left p-2 font-medium">Company</th>
-                    <th className="text-left p-2 font-medium">Position</th>
-                    <th className="text-left p-2 font-medium">Connected On</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {connections.map((connection, index) => (
-                    <tr 
-                      key={index} 
-                      className="border-b hover:bg-muted/50"
-                    >
-                      <td className="p-2">
-                        {connection["First Name"]} {connection["Last Name"]}
-                      </td>
-                      <td className="p-2">{connection["Email Address"]}</td>
-                      <td className="p-2">{connection.Company}</td>
-                      <td className="p-2">{connection.Position}</td>
-                      <td className="p-2">{connection["Connected On"]}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ConnectionsList connections={connections} />
           )}
         </CardContent>
       </Card>
