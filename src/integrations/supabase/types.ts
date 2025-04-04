@@ -102,6 +102,7 @@ export type Database = {
           "Last Name": string
           Position: string
           URL: string
+          user_id: string | null
         }
         Insert: {
           Company: string
@@ -111,6 +112,7 @@ export type Database = {
           "Last Name": string
           Position: string
           URL: string
+          user_id?: string | null
         }
         Update: {
           Company?: string
@@ -120,6 +122,7 @@ export type Database = {
           "Last Name"?: string
           Position?: string
           URL?: string
+          user_id?: string | null
         }
         Relationships: []
       }

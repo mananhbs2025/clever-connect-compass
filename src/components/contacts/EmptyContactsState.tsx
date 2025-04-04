@@ -15,14 +15,14 @@ export const EmptyContactsState: React.FC<EmptyContactsStateProps> = ({
       <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
       <h3 className="text-lg font-medium mb-2">No connections found</h3>
       <p className="text-muted-foreground mb-4">
-        Unable to find your LinkedIn connections. This might be due to a database connectivity issue.
+        No LinkedIn connections associated with your account. Click below to load your connections.
       </p>
       <Button 
         size="default" 
         onClick={onOpenImportModal}
         className="mx-auto"
       >
-        Try Again
+        Load Connections
       </Button>
     </div>
   );

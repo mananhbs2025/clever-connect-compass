@@ -19,12 +19,46 @@ interface Connection {
   Company: string;
   Position: string;
   URL: string;
+  user_id?: string;
 }
 
 const ContactsPage = () => {
   const { user } = useAuth();
   const [showImportModal, setShowImportModal] = useState(false);
   const [totalConnections, setTotalConnections] = useState<number>(0);
+  const [isAssigningConnections, setIsAssigningConnections] = useState(false);
+
+  // Assign connections to the current user
+  const assignConnectionsToUser = async () => {
+    if (!user) return;
+    
+    try {
+      setIsAssigningConnections(true);
+      
+      console.log("Assigning connections to user", user.id);
+      const { error, count } = await supabase
+        .from("User_Connections")
+        .update({ user_id: user.id })
+        .is("user_id", null)
+        .select("*", { count: 'exact', head: true });
+      
+      if (error) {
+        console.error("Error assigning connections:", error);
+        toast.error("Failed to assign connections to your account");
+        return;
+      }
+      
+      console.log(`Assigned ${count} connections to user ${user.id}`);
+      if (count > 0) {
+        toast.success(`Associated ${count} connections with your account`);
+        refetchConnections();
+      }
+    } catch (error) {
+      console.error("Error in assignConnectionsToUser:", error);
+    } finally {
+      setIsAssigningConnections(false);
+    }
+  };
 
   // Fetch User_Connections table data - using * to fetch all columns
   const {
@@ -33,25 +67,33 @@ const ContactsPage = () => {
     error: connectionsError,
     refetch: refetchConnections
   } = useQuery({
-    queryKey: ["userConnections"],
+    queryKey: ["userConnections", user?.id],
     queryFn: async () => {
-      console.log("Fetching user connections");
+      console.log("Fetching user connections for user", user?.id);
       
-      // This query should return all data from User_Connections
+      // This query should return all data from User_Connections for the current user
       const { data, error, count } = await supabase
         .from("User_Connections")
-        .select("*", { count: 'exact' });
+        .select("*", { count: 'exact' })
+        .eq("user_id", user?.id);
 
       if (error) {
         console.error("Error fetching connections:", error);
         throw error;
       }
       
-      console.log("Connections query response:", { data, count });
+      console.log("Connections query response:", { data, count, userId: user?.id });
       return data as Connection[];
     },
     enabled: !!user, // Only run query when user is authenticated
   });
+
+  // Check for unassigned connections when user logs in
+  useEffect(() => {
+    if (user && (connections === undefined || connections?.length === 0)) {
+      assignConnectionsToUser();
+    }
+  }, [user, connections]);
 
   // Get total count of connections
   useEffect(() => {
@@ -91,14 +133,17 @@ const ContactsPage = () => {
             <CardDescription>View and manage all your LinkedIn connections</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoadingConnections ? (
+            {isLoadingConnections || isAssigningConnections ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : connections && connections.length > 0 ? (
               <ContactsList connections={connections} />
             ) : (
-              <EmptyContactsState onOpenImportModal={() => setShowImportModal(true)} />
+              <EmptyContactsState onOpenImportModal={() => {
+                assignConnectionsToUser();
+                setShowImportModal(true);
+              }} />
             )}
           </CardContent>
         </Card>
