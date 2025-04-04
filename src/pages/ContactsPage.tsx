@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase, from } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +26,7 @@ const ContactsPage = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [totalConnections, setTotalConnections] = useState<number>(0);
 
-  // Fetch directly from User_Connections table
+  // Fetch User_Connections table data
   const {
     data: connections,
     isLoading: isLoadingConnections,
