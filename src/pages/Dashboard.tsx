@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { ContactImportModal } from "@/components/ContactImportModal";
 import {
   Card,
   CardContent,
@@ -51,6 +51,7 @@ interface Activity {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Fetch contacts from Supabase
   const {
@@ -169,6 +170,13 @@ const Dashboard = () => {
     // To be implemented - show modal or navigate to add contact form
     toast.info("Add contact functionality coming soon");
   };
+
+  // Check if user has no contacts
+  useEffect(() => {
+    if (contacts && contacts.length === 0) {
+      setShowImportModal(true);
+    }
+  }, [contacts]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -441,6 +449,12 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      
+      {/* Import Contacts Modal */}
+      <ContactImportModal 
+        isOpen={showImportModal} 
+        onClose={() => setShowImportModal(false)} 
+      />
     </div>
   );
 };
