@@ -1,10 +1,10 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase, from } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, ArrowLeft, User, PhoneCall, MailPlus } from "lucide-react";
+import { Loader2, ArrowLeft, User, PhoneCall, MailPlus, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { ContactImportModal } from "@/components/ContactImportModal";
 
 interface Contact {
   id: string;
@@ -37,12 +38,14 @@ interface Contact {
 
 const ContactsPage = () => {
   const { user } = useAuth();
+  const [showImportModal, setShowImportModal] = useState(false);
 
-  // Fetch all contacts from Supabase
+  // Fetch all contacts from Supabase with a properly defined queryKey
   const {
     data: contacts,
     isLoading,
     error,
+    refetch: refetchContacts
   } = useQuery({
     queryKey: ["allContacts"],
     queryFn: async () => {
@@ -89,6 +92,12 @@ const ContactsPage = () => {
       .substring(0, 2);
   };
 
+  // Handle successful import to refresh the contacts list
+  const handleImportSuccess = () => {
+    refetchContacts();
+    toast.success("Contacts imported successfully");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -107,6 +116,9 @@ const ContactsPage = () => {
               </p>
             </div>
           </div>
+          <Button onClick={() => setShowImportModal(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Import Contacts
+          </Button>
         </div>
       </div>
 
@@ -191,16 +203,26 @@ const ContactsPage = () => {
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No contacts found</p>
-                <Button variant="outline" size="sm" className="mt-2">
-                  <Link to="/dashboard" className="flex items-center">
-                    <ArrowLeft className="h-4 w-4 mr-1" /> Return to Dashboard
-                  </Link>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => setShowImportModal(true)}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Import your first contacts
                 </Button>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Import Contacts Modal */}
+      <ContactImportModal 
+        isOpen={showImportModal} 
+        onClose={() => setShowImportModal(false)}
+        onImportSuccess={handleImportSuccess}
+      />
     </div>
   );
 };
