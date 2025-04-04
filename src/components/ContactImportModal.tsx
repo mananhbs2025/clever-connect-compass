@@ -105,7 +105,7 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({
       if (error) throw error;
 
       // Check how many contacts were imported
-      if (data > 0) {
+      if (data && data > 0) {
         toast.success(`Successfully imported ${data} connections`);
         
         // Refresh contacts list
