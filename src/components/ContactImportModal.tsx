@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { parseCSV } from "@/utils/csv-parser";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileSpreadsheet, UserPlus } from "lucide-react";
 
 interface ContactImportModalProps {
   isOpen: boolean;
@@ -127,24 +127,30 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Import Contacts</DialogTitle>
+          <DialogTitle className="text-xl">Import Contacts</DialogTitle>
           <DialogDescription>
-            Upload a CSV file or import your connections directly
+            Import your connections or upload a CSV file to get started
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <div className="border rounded-md p-4 bg-muted/30">
-            <h3 className="text-sm font-medium mb-2">Import from LinkedIn Connections</h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              Import your connections that were previously uploaded
-            </p>
+        <div className="space-y-6 py-4">
+          <div className="border rounded-md p-6 bg-muted/10 shadow-sm">
+            <div className="flex items-start mb-4">
+              <UserPlus className="h-8 w-8 text-primary mr-4" />
+              <div>
+                <h3 className="text-base font-medium mb-1">Import LinkedIn Connections</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Quickly add your connections to your contact list
+                </p>
+              </div>
+            </div>
             <Button 
               onClick={handleConnectionImport} 
               className="w-full"
               disabled={isConnecting}
+              size="lg"
             >
               {isConnecting ? (
                 <>
@@ -157,8 +163,16 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({
             </Button>
           </div>
           
-          <div className="border rounded-md p-4 bg-muted/30">
-            <h3 className="text-sm font-medium mb-2">Import from CSV file</h3>
+          <div className="border rounded-md p-6 bg-muted/10 shadow-sm">
+            <div className="flex items-start mb-4">
+              <FileSpreadsheet className="h-8 w-8 text-primary mr-4" />
+              <div>
+                <h3 className="text-base font-medium mb-1">Import from CSV file</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Upload a CSV file with your contacts information
+                </p>
+              </div>
+            </div>
             <Input 
               type="file" 
               accept=".csv" 
@@ -169,6 +183,7 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({
               onClick={handleUpload} 
               className="w-full"
               disabled={!selectedFile || isImporting}
+              size="lg"
             >
               {isImporting ? (
                 <>

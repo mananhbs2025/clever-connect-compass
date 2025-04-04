@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MailPlus, PhoneCall, Plus, User } from "lucide-react";
 import { Link } from "react-router-dom";
+import { format } from "date-fns";
 
 interface Contact {
   id: string;
@@ -34,6 +35,16 @@ export const ContactsTable: React.FC<ContactsTableProps> = ({
   onAddContact,
   formatLastContact
 }) => {
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <>
       {isLoading ? (
