@@ -35,7 +35,15 @@ const ConnectionsPage = () => {
 
         if (error) throw error;
         console.log("Fetched connections:", data);
-        setConnections(data || []);
+        
+        // Ensure all connections have the Location property
+        const connectionsWithLocation = data?.map(conn => ({
+          ...conn,
+          // If Location is undefined or null, provide an empty string
+          Location: conn.Location || ""
+        })) || [];
+        
+        setConnections(connectionsWithLocation);
       } catch (error) {
         console.error("Error fetching connections:", error);
       } finally {
